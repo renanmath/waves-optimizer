@@ -1,5 +1,8 @@
 from collections import defaultdict
 from pprint import pprint
+from time import time
+
+import numpy as np
 from waves_op.io import build_boxes_and_items
 from waves_op.metrics import get_metrics, get_sku_distribution_dict
 from waves_op.models.box import Box, Item, SkuInfo
@@ -8,12 +11,58 @@ from waves_op.models.solver import WavesBuilder
 
 
 class GreedyBuilder(WavesBuilder):
-    def __init__(self, boxes: list[Box], items: list[Item],max_capacity:int=2000) -> None:
-        super().__init__(boxes, items,max_capacity)
+    def __init__(
+        self,
+        boxes: list[Box],
+        items: list[Item],
+        max_capacity: int = 2000,
+        sort_method: str = "cluster",
+        aggregation_method: str = "max",
+    ) -> None:
+        super().__init__(boxes, items, max_capacity)
         self.skus_info: list[SkuInfo] = self.build_sku_info()
         self.allocated_boxes: list[Box] = list()
         self.allocated_skus: list[str] = list()
         self.waves: list[Wave] = list()
+
+        self.sort_method = sort_method
+        self.aggregation_method = aggregation_method
+
+        self.aggregation_functions_map = {
+            "max": lambda vector: max(vector),
+            "mean": lambda vector: np.mean(vector),
+            "median": lambda vector: np.median(vector),
+        }
+
+
+    def apply_cluster_sorting_method(
+        self,
+        info: SkuInfo,
+        previous_sku: str,
+        last_skus: list[str]
+    ):
+        return (
+            info.sku in last_skus,
+            info.sku == previous_sku,
+            previous_sku in info.all_skus,
+            info.total,
+            info.total_sku,
+            len(info.boxes),
+        )
+
+    def apply_similarity_sorting_method(self, info: SkuInfo, wave: Wave):
+        return self.aggregation_functions_map[self.aggregation_method](
+            wave.get_similarity_vector(info)
+        )
+    
+    def apply_sorting_method(self, info:SkuInfo, previous_wave:Wave,
+                             previous_sku:str, last_skus:list[str]):
+        
+        if self.sort_method == "cluster":
+            return self.apply_cluster_sorting_method(info=info, previous_sku=previous_sku,last_skus=last_skus)
+        elif self.sort_method == "similarity":
+            return self.apply_similarity_sorting_method(info=info, wave=previous_wave)        
+        
 
     def build_sku_info(self):
         raw_info = defaultdict(list)
@@ -40,17 +89,12 @@ class GreedyBuilder(WavesBuilder):
         while skus_info_copy:
             last_skus = list(previous_wave.sku_count.keys())
             skus_info_copy.sort(
-                key=lambda info: (
-                    info.sku in last_skus,
-                    info.sku == previous_sku,
-                    previous_sku in info.all_skus,
-                    info.total,
-                    info.total_sku,
-                    len(info.boxes),
+                key=lambda info: self.apply_sorting_method(
+                    info,previous_wave, previous_sku, last_skus
                 ),
                 reverse=True,
             )
-
+            
             sku_info = skus_info_copy.pop(0)
 
             previous_wave, next_wave, use_next_wave = self.fill_wave_from_sku_info(
@@ -274,9 +318,11 @@ class GreedyBuilder(WavesBuilder):
                 )
 
     def build_waves(self) -> list[Wave]:
+        print("Building initial waves")
         waves = self.build_initial_waves()
 
+        
+        print("Refining waves")
         self.refine_waves(waves)
 
         return waves
-
