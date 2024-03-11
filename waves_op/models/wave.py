@@ -41,7 +41,7 @@ class Wave:
             return float("inf")
 
         boxes_total = sum(
-        sum(prod.quantity for prod in box.content if prod.item.sku == sku)
+            sum(prod.quantity for prod in box.content if prod.item.sku == sku)
             for box in boxes
         )
 

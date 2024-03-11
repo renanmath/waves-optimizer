@@ -8,9 +8,11 @@ from waves_op.optimization.milp.builder import WavesProblemBuilder
 
 class WavesOptimizer:
     def __init__(
-        self, boxes: list[Box], items: list[Item],
+        self,
+        boxes: list[Box],
+        items: list[Item],
         max_capacity: int = 2000,
-        use_wave_activation:bool=True
+        use_wave_activation: bool = True,
     ) -> None:
         self.boxes = boxes
         self.items = items
@@ -61,17 +63,21 @@ class WavesOptimizer:
 
 class MILPBuilder(WavesBuilder):
     def __init__(
-        self, boxes: list[Box], items: list[Item],
-        max_capacity: int = 2000, use_wave_activation:bool = True
+        self,
+        boxes: list[Box],
+        items: list[Item],
+        max_capacity: int = 2000,
+        use_wave_activation: bool = True,
     ) -> None:
         super().__init__(boxes, items, max_capacity)
         self.use_wave_activation = use_wave_activation
 
     def build_waves(self) -> list[Wave]:
-        optimizer = WavesOptimizer(self.boxes, self.items, self.max_capacity,self.use_wave_activation)
+        optimizer = WavesOptimizer(
+            self.boxes, self.items, self.max_capacity, self.use_wave_activation
+        )
         return optimizer.solve_optimization_problem()
 
 
 class InfeasibleProblemException(Exception):
     pass
-

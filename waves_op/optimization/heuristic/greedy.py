@@ -34,12 +34,8 @@ class GreedyBuilder(WavesBuilder):
             "median": lambda vector: np.median(vector),
         }
 
-
     def apply_cluster_sorting_method(
-        self,
-        info: SkuInfo,
-        previous_sku: str,
-        last_skus: list[str]
+        self, info: SkuInfo, previous_sku: str, last_skus: list[str]
     ):
         return (
             info.sku in last_skus,
@@ -54,15 +50,21 @@ class GreedyBuilder(WavesBuilder):
         return self.aggregation_functions_map[self.aggregation_method](
             wave.get_similarity_vector(info)
         )
-    
-    def apply_sorting_method(self, info:SkuInfo, previous_wave:Wave,
-                             previous_sku:str, last_skus:list[str]):
-        
+
+    def apply_sorting_method(
+        self,
+        info: SkuInfo,
+        previous_wave: Wave,
+        previous_sku: str,
+        last_skus: list[str],
+    ):
+
         if self.sort_method == "cluster":
-            return self.apply_cluster_sorting_method(info=info, previous_sku=previous_sku,last_skus=last_skus)
+            return self.apply_cluster_sorting_method(
+                info=info, previous_sku=previous_sku, last_skus=last_skus
+            )
         elif self.sort_method == "similarity":
-            return self.apply_similarity_sorting_method(info=info, wave=previous_wave)        
-        
+            return self.apply_similarity_sorting_method(info=info, wave=previous_wave)
 
     def build_sku_info(self):
         raw_info = defaultdict(list)
@@ -90,11 +92,11 @@ class GreedyBuilder(WavesBuilder):
             last_skus = list(previous_wave.sku_count.keys())
             skus_info_copy.sort(
                 key=lambda info: self.apply_sorting_method(
-                    info,previous_wave, previous_sku, last_skus
+                    info, previous_wave, previous_sku, last_skus
                 ),
                 reverse=True,
             )
-            
+
             sku_info = skus_info_copy.pop(0)
 
             previous_wave, next_wave, use_next_wave = self.fill_wave_from_sku_info(
@@ -321,7 +323,6 @@ class GreedyBuilder(WavesBuilder):
         print("Building initial waves")
         waves = self.build_initial_waves()
 
-        
         print("Refining waves")
         self.refine_waves(waves)
 

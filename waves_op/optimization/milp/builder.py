@@ -11,8 +11,11 @@ from waves_op.models.wave import Wave
 
 class WavesProblemBuilder:
     def __init__(
-        self, boxes: list[Box], items: list[Item],
-        max_capacity: int = 2000, use_wave_activation: bool = True
+        self,
+        boxes: list[Box],
+        items: list[Item],
+        max_capacity: int = 2000,
+        use_wave_activation: bool = True,
     ) -> None:
 
         self.boxes = boxes
@@ -109,7 +112,7 @@ class WavesProblemBuilder:
         """
         if not self.use_wave_activation:
             return None
-        
+
         for j_index in range(self.num_waves):
             y_j = self.variables["y"][j_index]
 
@@ -139,7 +142,10 @@ class WavesProblemBuilder:
 
     def constraint_wave_must_obey_max_capacity(self, solver):
         for j_index in range(self.num_waves):
-            constraint = solver.Constraint(-solver.infinity(), 0 + 1*(not self.use_wave_activation)*self.max_capacity)
+            constraint = solver.Constraint(
+                -solver.infinity(),
+                0 + 1 * (not self.use_wave_activation) * self.max_capacity,
+            )
             if self.use_wave_activation:
                 y_j = self.variables["y"][j_index]
                 constraint.SetCoefficient(y_j, -self.max_capacity)
