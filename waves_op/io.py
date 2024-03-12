@@ -52,12 +52,11 @@ def parse_waves_to_sheet(waves: list[Wave], sheet_name: str):
 
 
 def save_result(sheet_name: str, waves: list[Wave] | None = None):
+    """
+    Parse the waves to a sheet
+    """
     if waves is None:
         raise ValueError("No waves has been build yet")
 
     parse_waves_to_sheet(waves=waves, sheet_name=sheet_name)
 
-
-if __name__ == "__main__":
-    boxes, items = build_boxes_and_items("dados.xlsx")
-    print("OK")

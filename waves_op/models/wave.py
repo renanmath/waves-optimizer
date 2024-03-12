@@ -18,6 +18,9 @@ class Wave:
 
     @property
     def remaining_capacity(self):
+        """
+        Percentage of wave max capacity already used to allocate boxes
+        """
         return self.max_capacity - self.total_items
 
     @property
@@ -34,6 +37,12 @@ class Wave:
         return sku_count
 
     def compute_sku_similarity(self, sku: str, boxes: list[Box]):
+        """
+        The similarity metric is define as the quotient (A + B) / (C - B), where:
+        - A is the sum of quantity of items in the boxes with that sku
+        - B is the sum of items in the wave with that sku
+        - C is the wave total number of items
+        """
         sku_count = self.sku_count
         wave_total = self.total_items
 
@@ -48,6 +57,9 @@ class Wave:
         return (boxes_total + sku_count[sku]) / (wave_total - sku_count[sku])
 
     def get_similarity_vector(self, sku_info: SkuInfo):
+        """
+        Compute the similarity metric vector of sku with respect to wave
+        """
         similarities: list[float] = [
             self.compute_sku_similarity(sku=sku, boxes=sku_info.boxes)
             for sku in sku_info.all_skus

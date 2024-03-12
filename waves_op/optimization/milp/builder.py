@@ -1,5 +1,5 @@
 """
-Build optimzation MILP solver
+Build optimization MILP solver
 """
 
 from ortools.linear_solver import pywraplp
@@ -17,6 +17,16 @@ class WavesProblemBuilder:
         max_capacity: int = 2000,
         use_wave_activation: bool = True,
     ) -> None:
+        """
+        Class to construct the MILP formulation of waves problem
+        It sets the variables, the constraints and the objective function
+        based on the data of boxes and items
+        Args:
+            boxes (list[Box]): list of boxes to be allocated in waves
+            items (list[Item]): list of items of those boxes
+            max_capacity (int): maximum quantity of items a wave can contain
+            use_wave_activation (bool): flag to indicate whether to use or not the y variables in the MILP formulation
+        """
 
         self.boxes = boxes
         self.items = items
@@ -52,6 +62,11 @@ class WavesProblemBuilder:
         return waves
 
     def build_optimization_problem(self):
+        """
+        Create a solver, build variables, set constraints and define objective function
+        Return:
+            solver: instance of MILP solver
+        """
         solver = pywraplp.Solver.CreateSolver("CBC")
 
         if solver is None:
@@ -64,6 +79,14 @@ class WavesProblemBuilder:
         return solver
 
     def create_variables(self, solver):
+        """
+        Create all variables for the MILP problem
+        All variables are binary
+        x_{i,j}: the i-th box is allocated in the j-th wave
+        y_{j}: the j-th wave is activated
+        z_{k,j}: the k-th item is allocated in the j-th wave
+        If use_wave_activation flag is False, y variables are ignored
+        """
 
         # x variables
         for i_index in range(self.num_boxes):
@@ -88,6 +111,7 @@ class WavesProblemBuilder:
                 self.variables["z"][k_index].append(z_var)
 
     def set_constraints(self, solver):
+        """Set all constraints for the problem"""
         self.constraint_boxes_must_be_assigned_to_waves(solver=solver)
         self.constraint_boxes_must_be_assigned_only_to_active_waves(solver=solver)
         self.constraint_if_box_in_wave_item_must_be_in_wave(solver=solver)
@@ -95,8 +119,9 @@ class WavesProblemBuilder:
 
     def constraint_boxes_must_be_assigned_to_waves(self, solver):
         """
+        Ensures each box must be allocated in exactly one wave
         LaTex Formula:
-            sum_{j \in J} x_{i,j} = 1 \forall i \in I
+            \sum_{j \in J} x_{i,j} = 1 \forall i \in I
         """
 
         for i_index in range(self.num_boxes):
@@ -107,6 +132,7 @@ class WavesProblemBuilder:
 
     def constraint_boxes_must_be_assigned_only_to_active_waves(self, solver):
         """
+        If use_wave_activation is True, ensures only activated waves can be used to carry boxes
         LaTex Formula:
             x_{i,j} \le y_j \forall i \in I \forall j \in J
         """
@@ -124,6 +150,7 @@ class WavesProblemBuilder:
 
     def constraint_if_box_in_wave_item_must_be_in_wave(self, solver):
         """
+        Ensures that, if a item is allocated in one wave, its box is also allocated in that wave
         LaTex Formula:
             Z_{k,j} \ge x_{i,j} \forall k \in K_i \forall j in J
         """
@@ -141,6 +168,11 @@ class WavesProblemBuilder:
                         constraint.SetCoefficient(z_k_j, -1)
 
     def constraint_wave_must_obey_max_capacity(self, solver):
+        """
+        Ensures waves will respect maximum quantity of items
+        LaTex Formula:
+            \sum_{i \in I} x_{i,j} \cdot p_i \le c \cdot y_{j} \forall j \in J
+        """
         for j_index in range(self.num_waves):
             constraint = solver.Constraint(
                 -solver.infinity(),
@@ -156,6 +188,11 @@ class WavesProblemBuilder:
                 constraint.SetCoefficient(x_i_j, total_i)
 
     def set_objective_function(self, solver):
+        """
+        Define objective function
+        The goal is to minimize the distribution of items across waves,
+        i.e., minimize the quantity of items with same sku in different waves
+        """
         objective = solver.Objective()
 
         for j_index in range(self.num_waves):

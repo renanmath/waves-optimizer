@@ -1,5 +1,7 @@
-from pprint import pprint
-from waves_op.io import save_result
+"""
+MILP solver
+"""
+
 from waves_op.models.box import Box, Item
 from waves_op.models.solver import WavesBuilder
 from waves_op.models.wave import Wave
@@ -14,6 +16,14 @@ class WavesOptimizer:
         max_capacity: int = 2000,
         use_wave_activation: bool = True,
     ) -> None:
+        """
+        Class to solve the MILP formulation of waves problem
+        Args:
+            boxes (list[Box]): list of boxes to be allocated in waves
+            items (list[Item]): list of items of those boxes
+            max_capacity (int): maximum quantity of items a wave can contain
+            use_wave_activation (bool): flag to indicate whether to use or not the y variables in the MILP formulation
+        """
         self.boxes = boxes
         self.items = items
         self.max_capacity = max_capacity
@@ -28,6 +38,9 @@ class WavesOptimizer:
         return self.builder.variables
 
     def solve_optimization_problem(self):
+        """
+        Call MILP solver and check for status of optimization
+        """
         status = self.solver.Solve()
 
         if status in [self.solver.FEASIBLE, self.solver.OPTIMAL]:
@@ -39,6 +52,10 @@ class WavesOptimizer:
             )
 
     def build_solution_from_solver(self):
+        """
+        If found feasible solution for the MILP formulation,
+        build waves out of the values of variables
+        """
 
         activated_waves: list[Wave] = list()
         for j_index in range(self.builder.num_waves):
@@ -57,8 +74,6 @@ class WavesOptimizer:
 
         return activated_waves
 
-    def save_result(self, sheet_name: str):
-        save_result(sheet_name=sheet_name, waves=self.activated_waves)
 
 
 class MILPBuilder(WavesBuilder):

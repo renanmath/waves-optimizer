@@ -1,5 +1,5 @@
 """
-Test diferent solutions from diferent builders
+Test different solutions from different builders
 """
 
 
@@ -9,7 +9,7 @@ from waves_op.optimization.heuristic.greedy import GreedyBuilder
 from waves_op.optimization.milp.optimizer import MILPBuilder
 
 
-# laod data
+# load data
 boxes, items = build_boxes_and_items("data/inputs/dados.xlsx")
 
 # set optimization parameters

@@ -54,10 +54,6 @@ class SkuInfo:
         return total
 
     @property
-    def sorted_boxes(self):
-        return sorted(self.boxes, key=lambda box: box.total, reverse=True)
-
-    @property
     def all_skus(self):
         all_skus: list[str] = list()
         for box in self.boxes:
